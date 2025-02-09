@@ -131,9 +131,10 @@ class User extends Model
      */
     public function delete(int $userId): bool
     {
-        $stmt = $this->pdo->prepare("UPDATE user SET del_status = :del_status WHERE id = :id");
+        $stmt = $this->pdo->prepare("UPDATE user SET del_status = :del_status, del_date = :del_date WHERE id = :id");
         $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':del_status', Constants::DEL_STATUS_DELETED, PDO::PARAM_INT);
+        $stmt->bindValue(':del_date', date('Y-m-d H:i:s'));
 
         return $stmt->execute();
     }

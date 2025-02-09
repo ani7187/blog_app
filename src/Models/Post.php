@@ -146,11 +146,11 @@ class Post extends Model
         $countStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $countStmt->bindValue(':del_status', Constants::DEL_STATUS_ACTIVE, PDO::PARAM_INT);
         $countStmt->execute();
-        $totalPosts = $countStmt->fetchColumn();
+        $postsCnt = $countStmt->fetchColumn();
 
         return [
             'posts' => $posts,
-            'totalPosts' => $totalPosts
+            'postsCnt' => $postsCnt
         ];
     }
 
@@ -186,17 +186,18 @@ class Post extends Model
         $countStmt = $this->pdo->prepare("
             SELECT COUNT(*) 
             FROM posts
-            JOIN user ON posts.user_id = user.id
+            JOIN user ON (posts.user_id = user.id AND posts.del_status = :del_status)
             WHERE posts.title LIKE :search_term OR posts.content LIKE :search_term
         ");
 
         $countStmt->bindValue(':search_term', '%' . $query . '%');
+        $countStmt->bindValue(':del_status', Constants::DEL_STATUS_ACTIVE, PDO::PARAM_INT);
         $countStmt->execute();
-        $totalPosts = $countStmt->fetchColumn();
+        $postsCnt = $countStmt->fetchColumn();
 
         return [
             'posts' => $posts,
-            'totalPosts' => $totalPosts
+            'postsCnt' => $postsCnt
         ];
     }
 
@@ -206,10 +207,25 @@ class Post extends Model
      */
     public function delete(int $postID): bool
     {
-        $stmt = $this->pdo->prepare("UPDATE posts SET del_status = :del_status WHERE id = :id");
-        $stmt->bindValue(':id', $postID, PDO::PARAM_INT);
-        $stmt->bindValue(':del_status', Constants::DEL_STATUS_DELETED, PDO::PARAM_INT);
+        $this->pdo->beginTransaction();
 
-        return $stmt->execute();
+        try {
+            $stmt = $this->pdo->prepare("UPDATE posts SET del_status = :del_status, del_date = :del_date WHERE id = :id");
+            $stmt->bindValue(':id', $postID, PDO::PARAM_INT);
+            $stmt->bindValue(':del_status', Constants::DEL_STATUS_DELETED, PDO::PARAM_INT);
+            $stmt->bindValue(':del_date', date('Y-m-d H:i:s'));
+
+            $stmt->execute();
+
+            // Delete all comments associated with the post
+            (new Comment())->deletePostComments($postID);
+
+            $this->pdo->commit();
+
+            return true;
+        } catch (\PDOException $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
     }
 }

@@ -3,7 +3,8 @@
 <!-- Search Form -->
 <form method="GET" action="/posts" class="mb-4">
     <div class="input-group">
-        <input type="text" name="query" class="form-control" placeholder="Search posts by title or content" value="<?php echo isset($_GET['query']) ? htmlspecialchars($_GET['query']) : ''; ?>">
+        <input type="text" name="query" class="form-control" placeholder="Search posts by title or content"
+               value="<?php echo isset($_GET['query']) ? htmlspecialchars($_GET['query']) : ''; ?>">
         <button type="submit" class="btn btn-primary">Search</button>
     </div>
 </form>

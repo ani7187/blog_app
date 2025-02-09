@@ -30,8 +30,8 @@
 
         <!-- Pagination Links -->
         <div class="pagination mt-2">
-            <?php if ($totalPages > 1): ?>
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <?php if ($pagesCnt > 1): ?>
+                <?php for ($i = 1; $i <= $pagesCnt; $i++): ?>
                     <a href="/my_posts?page=<?php echo $i; ?>" class="page-link"><?php echo $i; ?></a>
                 <?php endfor; ?>
             <?php endif; ?>

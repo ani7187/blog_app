@@ -3,6 +3,7 @@
 namespace src\Controllers;
 
 use core\Controller;
+use helpers\CacheHelper;
 use helpers\ErrorFlow;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -22,22 +23,34 @@ class PostController extends Controller
         $page = isset($request->getQueryParams()['page']) ? (int)$request->getQueryParams()['page'] : 1;
         $query = $request->getQueryParams()['query'] ?? "";
 
-        $limit = 3;
-        $paginationData = (new Post())->getPosts($page, $limit, $query);
+        $cacheKey = "posts_page_{$page}_query_" . md5($query);
+        $cacheHelper = new \helpers\CacheHelper($cacheKey);
+        $cachedData = $cacheHelper->readCache();
 
-        $posts = $paginationData['posts'];
-        $totalPosts = $paginationData['totalPosts'];
-        $totalPages = ceil($totalPosts / $limit);
+        if ($cachedData !== null) {
+            $posts = $cachedData['posts'];
+            $pagesCnt = $cachedData['pagesCnt'];
+        } else {
+            $limit = 3;
+            $paginationData = (new \src\Models\Post())->getPosts($page, $limit, $query);
+            $posts = $paginationData['posts'];
+            $postsCnt = $paginationData['postsCnt'];
+            $pagesCnt = ceil($postsCnt / $limit);
 
-        $paginationLinks = $this->generatePaginationLinks($totalPages, $query);
+            $cacheHelper->writeCache([
+                'posts' => $posts,
+                'pagesCnt' => $pagesCnt
+            ]);
+        }
 
+        // Generate pagination links
+        $paginationLinks = $this->generatePaginationLinks($pagesCnt, $query);
         return $this->render($response, 'posts/index.php', [
             'posts' => $posts,
-            'totalPosts' => $totalPosts,
             'paginationLinks' => $paginationLinks,
-            'totalPages' => $totalPages,
         ]);
     }
+
 
     /**
      * @param Request $request
@@ -80,16 +93,15 @@ class PostController extends Controller
         $limit = 3;
         $paginationData = (new Post())->getUserPosts($userId, $page, $limit);
 
-        $totalPosts = $paginationData['totalPosts'] ?? [];
-        $totalPages = ceil($totalPosts / $limit);
+        $postsCnt = $paginationData['postsCnt'] ?? [];
+        $pagesCnt = ceil($postsCnt / $limit);
 
-        $paginationLinks = $this->generatePaginationLinks($totalPages);
+        $paginationLinks = $this->generatePaginationLinks($pagesCnt);
 
         return $this->render($response, 'posts/my_posts.php', [
             'posts' => $paginationData['posts'],
-            'totalPosts' => $totalPosts,
+            'pagesCnt' => $pagesCnt,
             'paginationLinks' => $paginationLinks,
-            'totalPages' => $totalPages
         ]);
     }
 
@@ -117,6 +129,7 @@ class PostController extends Controller
                 ->setUserID($_SESSION['user_id'])
                 ->create();
 
+            $this->invalidateAllCache();
             ErrorFlow::addError('post_error', "Success create");
             return $response->withHeader('Location', '/my_posts')->withStatus(302);
         }
@@ -157,6 +170,7 @@ class PostController extends Controller
                 ->setContent($content)
                 ->update();
 
+            $this->invalidateAllCache();
             ErrorFlow::addError('post_error', "Success update");
             return $response->withHeader('Location', '/my_posts')->withStatus(302);
         }
@@ -175,18 +189,25 @@ class PostController extends Controller
         $postId = (int) $args['id'];
         (new Post())->delete($postId);
 
+        $this->invalidateAllCache();
         return $response->withHeader('Location', '/my_posts')->withStatus(302);
     }
 
     /**
      * Generate pagination links.
      */
-    private function generatePaginationLinks(int $totalPages, string $query = ''): string
+    private function generatePaginationLinks(int $pagesCnt, string $query = ''): string
     {
         $paginationLinks = '';
-        for ($i = 1; $i <= $totalPages; $i++) {
+        for ($i = 1; $i <= $pagesCnt; $i++) {
             $paginationLinks .= '<a href="/posts?page=' . $i . '&query=' . urlencode($query) . '" class="page-link d-inline">' . $i . '</a> ';
         }
         return $paginationLinks;
+    }
+
+    private function invalidateAllCache(): void
+    {
+        $cacheHelper = new \helpers\CacheHelper('');
+        $cacheHelper->clearAllCaches();
     }
 }

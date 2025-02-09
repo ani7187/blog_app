@@ -16,7 +16,7 @@ class CommentController extends Controller
         $postId = (int)$args['id'];
 
         if (empty($content)) {
-            ErrorFlow::addError('comment_error', "Title and content required");
+            ErrorFlow::addError('comment_error', "Content required");
         }
 
         (new Comment())
@@ -25,7 +25,7 @@ class CommentController extends Controller
             ->setPostId($postId)
             ->create();
 
-        ErrorFlow::addError('comment_error', "Success create");
+        ErrorFlow::addError('comment_error', "Success comment added");
         return $response->withHeader('Location', "/posts/$postId")->withStatus(302);
     }
 

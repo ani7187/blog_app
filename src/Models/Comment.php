@@ -105,14 +105,26 @@ class Comment extends Model
      */
     public function delete(int $commentId): bool
     {
-        $stmt = $this->pdo->prepare("UPDATE comments SET del_status = :del_status WHERE id = :id");
+        $stmt = $this->pdo->prepare("UPDATE comments SET del_status = :del_status, del_date = :del_date WHERE id = :id");
 
-        $res = $stmt->execute([
-            'id' => $commentId,
-            'del_status' => Constants::DEL_STATUS_ACTIVE
-        ]);
+        $stmt->bindValue(':id', $commentId, PDO::PARAM_INT);
+        $stmt->bindValue(':del_status', Constants::DEL_STATUS_DELETED, PDO::PARAM_INT);
+        $stmt->bindValue(':del_date', date('Y-m-d H:i:s'));
 
-        return $res;
-//        var_dump($res);?
+        return $stmt->execute();
+    }
+
+    /**
+     * Delete a comment.
+     */
+    public function deletePostComments(int $postId): bool
+    {
+        $stmt = $this->pdo->prepare("UPDATE comments SET del_status = :del_status, del_date = :del_date WHERE post_id = :post_id");
+
+        $stmt->bindValue(':post_id', $postId, PDO::PARAM_INT);
+        $stmt->bindValue(':del_status', Constants::DEL_STATUS_DELETED, PDO::PARAM_INT);
+        $stmt->bindValue(':del_date', date('Y-m-d H:i:s'));
+
+        return $stmt->execute();
     }
 }
