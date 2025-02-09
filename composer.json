@@ -1,0 +1,25 @@
+{
+    "name": "php/blog",
+    "description": "Blog on native php",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "config\\": "config/",
+            "core\\": "core/",
+            "helpers\\": "helpers/",
+            "src\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ani Azizyan"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.7",
+        "vlucas/phpdotenv": "^5.5",
+        "ext-pdo": "*"
+    }
+}

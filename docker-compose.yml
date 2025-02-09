@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  php:
+    build: ./docker/
+    container_name: blog-php
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - mysql
+  nginx:
+    image: nginx
+    container_name: blog-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - php
+  mysql:
+    image: mysql:5.7
+    container_name: blog-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: blog_db
+      TZ: "Asia/Yerevan"
+    ports:
+      - "3306:3306"
