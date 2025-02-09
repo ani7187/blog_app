@@ -23,7 +23,7 @@ class UserSeeder implements SeederInterface
         // Sample user data
         $users = [
             ['username' => 'John', 'password' => 'secret123', 'email' => 'john.doe@example.com'],
-            ['username' => 'Ani', 'password' => 'secret123', 'email' => 'azizyana02@gmail.com'],
+            ['username' => 'Ani', 'password' => 'secret123', 'email' => 'example@gmail.com'],
         ];
 
         foreach ($users as $user) {

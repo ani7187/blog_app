@@ -22,14 +22,15 @@ Ensure you have installed
    git clone https://github.com/ani7187/blog_app.git
    cd blog_app
 
-- **Set up environment variables:** Copy the .env.example file to .env and configure your environment variables
+- **Set up environment variables:**
+  Copy the .env.example file to .env and configure your environment variables
 - **Start the application using Docker:**
     ```bash 
     docker-compose up --build -d
 - **Go into container:**
     ```bash
-    docker-compose exec php bash
-- **Install dependencies:** 
+    docker exec -it blog-php bash
+- **Install dependencies:**
     ```bash
     composer install
 - **Set up the database:** Create db schema:
