@@ -204,6 +204,7 @@ class Post extends Model
     /**
      * @param int $postID
      * @return bool
+     * @throws \Exception
      */
     public function delete(int $postID): bool
     {
@@ -225,7 +226,7 @@ class Post extends Model
             return true;
         } catch (\PDOException $e) {
             $this->pdo->rollBack();
-            return false;
+            throw new \Exception($e->getMessage());
         }
     }
 }

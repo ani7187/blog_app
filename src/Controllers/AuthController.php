@@ -3,6 +3,7 @@
 namespace src\Controllers;
 
 use helpers\ErrorFlow;
+use helpers\Logger;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use core\Controller;
@@ -48,17 +49,23 @@ class AuthController extends Controller
             return $response->withHeader('Location', '/register')->withStatus(302);
         }
 
-        $user = new User();
-        $user->setUsername($parsedBody['username'])
-            ->setPassword($parsedBody['password'])
-            ->setEmail($parsedBody['email']);
+        try {
+            $user = new User();
+            $user->setUsername($parsedBody['username'])
+                ->setPassword($parsedBody['password'])
+                ->setEmail($parsedBody['email']);
 
-        if ($user->create()) {
-            ErrorFlow::addError("login_error", "User registered successfully.");
-            return $response->withHeader('Location', '/login')->withStatus(302);
+            if ($user->create()) {
+                ErrorFlow::addError("login_error", "User registered successfully.");
+                return $response->withHeader('Location', '/login')->withStatus(302);
+            }
+
+            ErrorFlow::addError("register_error", "Registration failed.");
+        } catch (\Exception $e) {
+            Logger::error("Error on registration:" . $e->getMessage());
+            ErrorFlow::addError("register_error", "An error occurred during registration.");
         }
 
-        ErrorFlow::addError("register_error", "Registration failed.");
         return $response->withHeader('Location', '/register')->withStatus(302);
     }
 
@@ -85,7 +92,7 @@ class AuthController extends Controller
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['email'] = $email;
 
-            return $response->withHeader('Location', '/posts')->withStatus(302);//todo /posts
+            return $response->withHeader('Location', '/posts')->withStatus(302);
         }
 
         ErrorFlow::addError("login_error", "Invalid email or password.");

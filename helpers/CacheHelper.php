@@ -1,7 +1,6 @@
 <?php
 
 namespace helpers;
-use Predis\Client;
 
 class CacheHelper
 {

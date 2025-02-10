@@ -7,7 +7,7 @@ class Logger
     /**
      * @var string
      */
-    private static string $logDirPath = "storage/log";
+    private static string $logDirPath = __DIR__ . "/../storage/log";
 
     public static function log(string $message, string $logFile, string $type = "INFO"): void
     {

@@ -5,6 +5,7 @@ namespace src\Controllers;
 use core\Controller;
 use helpers\CacheHelper;
 use helpers\ErrorFlow;
+use helpers\Logger;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use src\Models\Comment;
@@ -123,14 +124,20 @@ class PostController extends Controller
                 return $response->withHeader('Location', '/posts/create')->withStatus(302);
             }
 
-            (new Post())
-                ->setTitle($title)
-                ->setContent($content)
-                ->setUserID($_SESSION['user_id'])
-                ->create();
+            try {
+                (new Post())
+                    ->setTitle($title)
+                    ->setContent($content)
+                    ->setUserID($_SESSION['user_id'])
+                    ->create();
 
-            $this->invalidateAllCache();
-            ErrorFlow::addError('post_error', "Success create");
+                $this->invalidateAllCache();
+                ErrorFlow::addError('post_error', "Success create");
+            } catch (\Exception $e) {
+                Logger::error("Error on post creation:" . $e->getMessage());
+                ErrorFlow::addError('post_error', "An error occurred during post creation.");
+            }
+
             return $response->withHeader('Location', '/my_posts')->withStatus(302);
         }
 
@@ -163,15 +170,20 @@ class PostController extends Controller
                 return $response->withHeader('Location', '/posts/create')->withStatus(302);
             }
 
-            // Update the post
-            (new Post())
-                ->setID($postId)
-                ->setTitle($title)
-                ->setContent($content)
-                ->update();
+            try {
+                // Update the post
+                (new Post())
+                    ->setID($postId)
+                    ->setTitle($title)
+                    ->setContent($content)
+                    ->update();
 
-            $this->invalidateAllCache();
-            ErrorFlow::addError('post_error', "Success update");
+                $this->invalidateAllCache();
+                ErrorFlow::addError('post_error', "Success update");
+            } catch (\Exception $e) {
+                Logger::error("Error on post update:" . $e->getMessage());
+                ErrorFlow::addError('post_error', "An error occurred during post update.");
+            }
             return $response->withHeader('Location', '/my_posts')->withStatus(302);
         }
 
@@ -187,9 +199,21 @@ class PostController extends Controller
     public function delete(Request $request, Response $response, $args): Response
     {
         $postId = (int) $args['id'];
-        (new Post())->delete($postId);
 
-        $this->invalidateAllCache();
+        try {
+            if (!(new Post())->delete($postId)) {
+                ErrorFlow::addError('post_error', "Failed to delete post");
+                Logger::error("Failed to delete post with ID: " . $postId);
+                return $response->withHeader('Location', '/my_posts')->withStatus(302);
+            }
+
+            ErrorFlow::addError('post_error', "Post successful deleted");
+            $this->invalidateAllCache();
+        } catch (\Exception $e) {
+            Logger::error("Error deleting post: " . $e->getMessage()); // Log critical errors
+            ErrorFlow::addError('post_error', "An error occurred while deleting the post.");
+        }
+
         return $response->withHeader('Location', '/my_posts')->withStatus(302);
     }
 
